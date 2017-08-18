@@ -11,6 +11,7 @@
 
 namespace Sg\DatatablesBundle\Response;
 
+use Doctrine\Common\Collections\Criteria;
 use Sg\DatatablesBundle\Datatable\Column\ColumnInterface;
 use Sg\DatatablesBundle\Datatable\Filter\FilterInterface;
 use Sg\DatatablesBundle\Datatable\DatatableInterface;
@@ -95,6 +96,13 @@ class DatatableQueryBuilder
      * @var QueryBuilder
      */
     private $qb;
+
+    /**
+     * The Base Criteria.
+     *
+     * @var Criteria
+     */
+    private $criteria;
 
     /**
      * The PropertyAccessor.
@@ -209,6 +217,7 @@ class DatatableQueryBuilder
         $this->rootEntityIdentifier = $this->getIdentifier($this->metadata);
 
         $this->qb = $this->em->createQueryBuilder();
+        $this->criteria = $datatable->getCriteria();
         $this->accessor = PropertyAccess::createPropertyAccessor();
 
         $this->columns = $datatable->getColumnBuilder()->getColumns();
@@ -310,40 +319,18 @@ class DatatableQueryBuilder
      *
      * @return $this
      */
-    public function buildQuery()
+    private function buildQuery()
     {
         $this->setSelectFrom();
         $this->setJoins($this->qb);
         $this->setWhere($this->qb);
+        $this->addCriteria($this->qb);
         $this->setOrderBy();
         $this->setLimit();
 
         return $this;
     }
 
-    /**
-     * Get qb.
-     *
-     * @return QueryBuilder
-     */
-    public function getQb()
-    {
-        return $this->qb;
-    }
-
-    /**
-     * Set qb.
-     *
-     * @param QueryBuilder $qb
-     *
-     * @return $this
-     */
-    public function setQb($qb)
-    {
-        $this->qb = $qb;
-
-        return $this;
-    }
 
     //-------------------------------------------------
     // Private/Public - Setup query
@@ -515,7 +502,7 @@ class DatatableQueryBuilder
      */
     public function execute()
     {
-        $query = $this->qb->getQuery();
+        $query = $this->getQuery();
         $query->setHydrationMode(Query::HYDRATE_ARRAY)
             ->useQueryCache($this->useQueryCache);
         call_user_func_array([$query, 'useResultCache'], $this->useResultCacheArgs);
@@ -530,9 +517,11 @@ class DatatableQueryBuilder
      */
     public function getCountAllResults()
     {
+        $alias = $this->entityShortName . "_t";
         $qb = $this->em->createQueryBuilder();
-        $qb->select('count(distinct '.$this->entityShortName.'.'.$this->rootEntityIdentifier.')');
-        $qb->from($this->entityName, $this->entityShortName);
+        $qb->select('count(distinct '.$alias.'.'.$this->rootEntityIdentifier.')');
+        $qb->from($this->entityName, $alias);
+        $this->addCriteria($qb);
         $query = $qb->getQuery();
         $query->useQueryCache($this->useCountQueryCache);
         call_user_func_array([$query, 'useResultCache'], $this->useCountResultCacheArgs);
@@ -849,5 +838,24 @@ class DatatableQueryBuilder
         }
 
         return $this;
+    }
+
+    private function addCriteria(QueryBuilder $qb)
+    {
+        if($this->criteria !== null) {
+            $qb->addCriteria($this->criteria);
+        }
+    }
+
+    /**
+     * @return Query
+     */
+    public function getQuery()
+    {
+        if (empty($this->qb->getDQLPart('select'))) {
+            $this->buildQuery();
+        }
+
+        return $this->qb->getQuery();
     }
 }
