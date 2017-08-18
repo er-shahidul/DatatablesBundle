@@ -37,7 +37,7 @@ class Post
 }
 ```
 
-Now you can view all posts created by `root`. The additional `where statement` now works like a filter.
+Now you can view all posts created by `logged in user`.
 
 ``` php
 public function indexAction(Request $request)
@@ -49,14 +49,10 @@ public function indexAction(Request $request)
         $responseService->setDatatable($datatable);
 
         $datatableQueryBuilder = $responseService->getDatatableQueryBuilder();
-        $datatableQueryBuilder->buildQuery();
 
-        //dump($datatableQueryBuilder->getQb()->getDQL()); die();
+        //dump($datatableQueryBuilder->getQuery()->getDQL()); die();
         
-        /** @var QueryBuilder $qb */
-        $qb = $datatableQueryBuilder->getQb();
-        $qb->andWhere('createdBy.username = :username');
-        $qb->setParameter('username', 'root');
+         $datatable->getCriteria()->andWhere(Criteria::expr()->eq('createdBy', $this->getUser()));
 
         return $responseService->getResponse();
     }
