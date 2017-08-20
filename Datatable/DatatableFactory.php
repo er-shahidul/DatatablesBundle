@@ -131,8 +131,8 @@ class DatatableFactory
                 $this->em,
                 $this->twig
             );
-
-            return $datatable->buildDataTable($options);
+            $datatable->buildDataTable($options);
+            return $datatable;
         } else {
             throw new Exception("DatatableFactory::create(): The class $class should implement the DatatableInterface.");
         }
