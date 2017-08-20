@@ -517,10 +517,10 @@ class DatatableQueryBuilder
      */
     public function getCountAllResults()
     {
-        $alias = $this->entityShortName . "_t";
         $qb = $this->em->createQueryBuilder();
-        $qb->select('count(distinct '.$alias.'.'.$this->rootEntityIdentifier.')');
-        $qb->from($this->entityName, $alias);
+        $qb->select('count(distinct '. $this->entityShortName .'.'.$this->rootEntityIdentifier.')');
+        $qb->from($this->entityName, $this->entityShortName);
+        $this->setJoins($qb);
         $this->addCriteria($qb);
         $query = $qb->getQuery();
         $query->useQueryCache($this->useCountQueryCache);

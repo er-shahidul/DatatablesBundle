@@ -110,7 +110,7 @@ class DatatableFactory
      * @return DatatableInterface
      * @throws Exception
      */
-    public function create($class)
+    public function create($class, $options = array())
     {
         if (!is_string($class)) {
             $type = gettype($class);
@@ -122,7 +122,8 @@ class DatatableFactory
         }
 
         if (in_array(DatatableInterface::class, class_implements($class))) {
-            return new $class(
+            /** @var DatatableInterface $datatable */
+            $datatable = new $class(
                 $this->authorizationChecker,
                 $this->securityToken,
                 $this->translator,
@@ -130,6 +131,8 @@ class DatatableFactory
                 $this->em,
                 $this->twig
             );
+
+            return $datatable->buildDataTable($options);
         } else {
             throw new Exception("DatatableFactory::create(): The class $class should implement the DatatableInterface.");
         }
