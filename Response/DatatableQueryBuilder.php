@@ -513,14 +513,19 @@ class DatatableQueryBuilder
     /**
      * Query results before filtering.
      *
+     * @param bool $fetchJoinCollection
      * @return int
      */
-    public function getCountAllResults()
+    public function getCountAllResults($fetchJoinCollection = false)
     {
         $qb = $this->em->createQueryBuilder();
         $qb->select('count(distinct '. $this->entityShortName .'.'.$this->rootEntityIdentifier.')');
         $qb->from($this->entityName, $this->entityShortName);
-        $this->setJoins($qb);
+
+       if($fetchJoinCollection) {
+           $this->setJoins($qb);
+       }
+
         $this->addCriteria($qb);
         $query = $qb->getQuery();
         $query->useQueryCache($this->useCountQueryCache);
